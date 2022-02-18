@@ -698,6 +698,7 @@ class ExampleTest extends TestCase
     {
         $tags = Tag::all();
         Office::factory()->hasAttached($tags)->create();
+        Office::factory()->hasAttached($tags)->create();
         Office::factory()->hasAttached($tags->first())->create();
         Office::factory()->create();
 
@@ -705,6 +706,6 @@ class ExampleTest extends TestCase
                 'tags' => $tags->pluck('id')->toArray(),
             ]));
 
-        $response->assertOk()->assertJsonCount(1, 'data');
+        $response->assertOk()->assertJsonCount(2, 'data');
     }
 }

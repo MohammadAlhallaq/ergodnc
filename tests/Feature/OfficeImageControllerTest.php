@@ -27,7 +27,7 @@ class OfficeImageControllerTest extends TestCase
         $office = Office::factory()->for($user)->create();
         $image = UploadedFile::fake()->image('cover.jpg');
 
-        $response = $this->post(
+        $response = $this->postJson(
             'api/offices/' . $office->id . '/images',
             compact('image'),
             [

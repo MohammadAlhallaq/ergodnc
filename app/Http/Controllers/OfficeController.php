@@ -37,18 +37,17 @@ class OfficeController extends Controller
             ->when($request->filled('visitor_id'), fn(Builder $builder) => $builder->whereRelation('reservations', 'user_id', '=', $request->get('visitor_id')))
             ->when(
                 $request->filled('lat') && $request->filled('lng'),
-                fn($builder) => $builder->NearestTo(
-                    $request->get('lat'),
-                    $request->get('lng'),
-                    fn($builder) => $builder->orderBy('id', 'ASC')
-                )
+                fn($builder) => $builder->NearestTo($request->get('lat'), $request->get('lng'), fn($builder) => $builder->orderBy('id', 'ASC'))
             )
-            ->when($request->filled('tags'), fn($builder) => $builder->whereHas(
-                'tags',
-                fn($builder) => $builder->whereIn('id', $request->get('tags')),
-                '=',
-                count($request->get('tags')),
-            )
+//            ->when($request->filled('tags'), fn($builder) => $builder->whereHas(
+//                'tags',
+//                fn($builder) => $builder->whereIn('id', $request->get('tags')),
+//                '=',
+//                count($request->get('tags')),
+//            )
+            ->when($request->filled('tags'),
+                fn($builder) => $builder->has('tags', '=', count($request->get('tags')))
+                    ->wherehas('tags', fn($builder) => $builder->whereKey($request->get('tags')))
             )
             ->with(['tags', 'images', 'user'])
             ->withCount(['reservations' => fn(Builder $builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])

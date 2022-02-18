@@ -21,7 +21,7 @@ class ImageController extends Controller
         $this->authorize('update', $office);
 
         $path = request()->file('image')->storePublicly('images');
-        return $path;
+
         $image = $office->images()->create([
             'path' => $path
         ]);
