@@ -268,15 +268,17 @@ class ReservationsTest extends TestCase
     public function itCreatesReservation()
     {
 
+        $this->withoutExceptionHandling();
         $user = User::factory()->create();
         $office = Office::factory()->create([
             'price_per_day' => 1_000,
             'monthly_discount' => 10,
         ]);
         $token = $user->createToken('token', ['reservation.create']);
+        Notification::fake();
 
         $response = $this->postJson(
-            '/api/reservations?',
+            '/api/reservations',
             [
                 'office_id' => $office->id,
                 'start_date' => now()->addDay(),
@@ -286,15 +288,16 @@ class ReservationsTest extends TestCase
                 'Authorization' => 'Bearer ' . $token->plainTextToken,
             ]
         );
-
-        $response->assertJsonPath('data.price', 36000);
-        $response->assertJsonStructure([
-            'data' => [
-                'user_id',
-                'office_id',
-                'office'
-            ],
-        ]);
+        Notification::assertSentTo($user, NewUserReservation::class);
+        $response
+            ->assertJsonPath('data.price', 36000)
+            ->assertJsonStructure([
+                'data' => [
+                    'user_id',
+                    'office_id',
+                    'office'
+                ],
+            ]);
     }
 
 
@@ -583,14 +586,15 @@ class ReservationsTest extends TestCase
      * @return void
      * @test
      */
-    function ItCancelReservation(){
+    function ItCancelReservation()
+    {
         $user = User::factory()->create();
         $office = Office::factory()->create();
         $reservation = Reservation::factory()->for($office)->for($user)->create();
         $token = $user->createToken('token', ['reservation.cancel']);
 
         $response = $this->deleteJson(
-            '/api/reservations/'.$reservation->id,
+            '/api/reservations/' . $reservation->id,
             [],
             [
                 'Authorization' => 'Bearer ' . $token->plainTextToken,
@@ -608,14 +612,15 @@ class ReservationsTest extends TestCase
      * @return void
      * @test
      */
-    function ItDoseNotCancelReservationForAnotherUser(){
+    function ItDoseNotCancelReservationForAnotherUser()
+    {
         $user = User::factory()->create();
         $office = Office::factory()->create();
         $reservation = Reservation::factory()->for($office)->create();
         $token = $user->createToken('token', ['reservation.cancel']);
 
         $response = $this->deleteJson(
-            '/api/reservations/'.$reservation->id,
+            '/api/reservations/' . $reservation->id,
             [],
             [
                 'Authorization' => 'Bearer ' . $token->plainTextToken,
@@ -633,14 +638,15 @@ class ReservationsTest extends TestCase
      * @return void
      * @test
      */
-    function ItDoseNotCancelReservationWithCanceledStatus(){
+    function ItDoseNotCancelReservationWithCanceledStatus()
+    {
         $user = User::factory()->create();
         $office = Office::factory()->create();
         $reservation = Reservation::factory()->for($office)->for($user)->canceled()->create();
         $token = $user->createToken('token', ['reservation.cancel']);
 
         $response = $this->deleteJson(
-            '/api/reservations/'.$reservation->id,
+            '/api/reservations/' . $reservation->id,
             [],
             [
                 'Authorization' => 'Bearer ' . $token->plainTextToken,
@@ -658,7 +664,8 @@ class ReservationsTest extends TestCase
      * @return void
      * @test
      */
-    function ItDoseNotCancelReservationPassingTheStartingDate(){
+    function ItDoseNotCancelReservationPassingTheStartingDate()
+    {
         $user = User::factory()->create();
         $office = Office::factory()->create();
         $reservation = Reservation::factory()->for($office)->for($user)->create([
@@ -667,7 +674,7 @@ class ReservationsTest extends TestCase
         $token = $user->createToken('token', ['reservation.cancel']);
 
         $response = $this->deleteJson(
-            '/api/reservations/'.$reservation->id,
+            '/api/reservations/' . $reservation->id,
             [],
             [
                 'Authorization' => 'Bearer ' . $token->plainTextToken,

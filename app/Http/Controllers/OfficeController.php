@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Pipelines\Filtering\FilterByLocation;
+use App\Http\Pipelines\Filtering\FilterByTags;
+use App\Http\Pipelines\Filtering\FilterByUserId;
+use App\Http\Pipelines\Filtering\FilterByVisitorId;
+use App\Http\Pipelines\Filtering\ReturnWithEagerLoadedData;
+use App\Http\Pipelines\Filtering\ShowOfficesForAuthUser;
 use App\Http\Resources\OfficeResource;
 use App\Models\Office;
 use App\Models\Reservation;
@@ -13,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -21,33 +28,49 @@ use Illuminate\Validation\ValidationException;
 
 class OfficeController extends Controller
 {
-    public function index(Request $request) :AnonymousResourceCollection
+    public function index(): AnonymousResourceCollection
     {
+        $pipes = [
+            ShowOfficesForAuthUser::class,
+            FilterByUserId::class,
+            FilterByVisitorId::class,
+            FilterByLocation::class,
+            FilterByTags::class,
+            ReturnWithEagerLoadedData::class
+        ];
 
-        $offices = Office::query()
-            ->when($request->filled('user_id') && $request->get('user_id') == auth()->id(), function ($q) {
-                $q->where('approval_status', Office::APPROVAL_APPROVED)->where('hidden', false);
-            })
-            ->when($request->filled('user_id'), fn($builder) => $builder->whereUserId($request->get('user_id')))
-            ->when($request->filled('visitor_id'), fn(Builder $builder) => $builder->whereRelation('reservations', 'user_id', '=', $request->get('visitor_id')))
-            ->when(
-                $request->filled('lat') && $request->filled('lng'),
-                fn($builder) => $builder->NearestTo($request->get('lat'), $request->get('lng'), fn($builder) => $builder->orderBy('id', 'ASC'))
-            )
+        $offices = app(Pipeline::class)
+                ->send(Office::query())
+                ->through($pipes)
+                ->thenReturn()
+                ->paginate(20);
+
+
+//        $offices = Office::query()
+//            ->when($request->filled('user_id') && $request->get('user_id') == auth()->id(),
+//                fn($builder) => $builder->where('approval_status', Office::APPROVAL_APPROVED)->where('hidden', false),
+//                fn($builder) => $builder,
+//            )
+//            ->when($request->filled('user_id'), fn($builder) => $builder->whereUserId($request->get('user_id')))
+//            ->when($request->filled('visitor_id'), fn(Builder $builder) => $builder->whereRelation('reservations', 'user_id', '=', $request->get('visitor_id')))
+//            ->when(
+//                $request->filled('lat') && $request->filled('lng'),
+//                fn($builder) => $builder->NearestTo($request->get('lat'), $request->get('lng'), fn($builder) => $builder->orderBy('id', 'ASC'))
+//            )
 //            ->when($request->filled('tags'), fn($builder) => $builder->whereHas(
 //                'tags',
 //                fn($builder) => $builder->whereIn('id', $request->get('tags')),
 //                '=',
 //                count($request->get('tags')),
 //            )
-            ->when($request->filled('tags'),
-                fn($builder) => $builder->has('tags', '=', count($request->get('tags')))
-                    ->wherehas('tags', fn($builder) => $builder->whereKey($request->get('tags')))
-            )
-            ->with(['tags', 'images', 'user'])
-            ->withCount(['reservations' => fn(Builder $builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
-            ->latest('id')
-            ->paginate(20);
+//            ->when($request->filled('tags'),
+//                fn($builder) => $builder->has('tags', '=', count($request->get('tags')))
+//                    ->wherehas('tags', fn($builder) => $builder->whereKey($request->get('tags')))
+//            )
+//            ->with(['tags', 'images', 'user'])
+//            ->withCount(['reservations' => fn(Builder $builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
+//            ->latest('id')
+//            ->paginate(20);
 
         return OfficeResource::collection($offices);
     }

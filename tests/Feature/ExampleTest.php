@@ -40,6 +40,8 @@ class ExampleTest extends TestCase
      */
     public function itListOffices()
     {
+        $this->withoutExceptionHandling();
+
         Office::factory(2)->create();
         $response = $this->get('/api/offices');
         $response->assertStatus(200);
@@ -210,6 +212,8 @@ class ExampleTest extends TestCase
         ]);
 
         $response = $this->get('/api/offices?lng=51.92476595832152&lat=4.477567790472324');
+
+
         $response->assertStatus(200);
         $this->assertEquals('crosswijk', $response->json('data')[0]['title']);
         $this->assertEquals('kralingen', $response->json('data')[1]['title']);
@@ -574,6 +578,7 @@ class ExampleTest extends TestCase
      */
     public function itShowsAllOffices()
     {
+        $this->withoutExceptionHandling();
         $user = User::factory()->create();
         $token = $user->createToken('token');
 
@@ -581,18 +586,17 @@ class ExampleTest extends TestCase
         Office::factory()->hidden()->for($user)->create();
         Office::factory(3)->for($user)->create();
 
-        $this->actingAs($user);
-
         $response = $this->getJson(
             '/api/offices?user_id=' . $user->id,
-            [],
             [
                 'Authorization' => 'Bearer ' . $token->plainTextToken,
             ]
         );
 
-        $response->assertStatus(200);
-        $response->assertJsonCount(3, 'data');
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonCount(3, 'data');
     }
 
 
