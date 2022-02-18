@@ -21,15 +21,10 @@ use Illuminate\Validation\ValidationException;
 
 class OfficeController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request) :AnonymousResourceCollection
     {
 
         $offices = Office::query()
-            // ->where('approval_status', Office::APPROVAL_APPROVED)
-            // ->where('hidden', false)
-            ->when($request->filled('user_id') && $request->get('user_id') == auth()->id(), function ($q) {
-                $q->where('approval_status', Office::APPROVAL_APPROVED)->where('hidden', false);
-            })
             ->when($request->filled('user_id') && $request->get('user_id') == auth()->id(), function ($q) {
                 $q->where('approval_status', Office::APPROVAL_APPROVED)->where('hidden', false);
             })

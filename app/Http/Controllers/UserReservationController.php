@@ -122,15 +122,15 @@ class UserReservationController extends Controller
         abort_unless(auth()->user()->tokenCan('reservation.cancel'), Response::HTTP_FORBIDDEN);
 
         throw_if(
-            $reservation->user_id == auth()->id()
+            $reservation->user_id != auth()->id()
             ||
             $reservation->status == Reservation::STATUS_CANCELED
             ||
-            $reservation->start_date < now()->toTimeString(),
+            $reservation->start_date < now()->toDateString(),
             ValidationException::withMessages(['reservation' => 'Can\'t cancel this reservation'])
         );
 
-        $reservation->update(['status' => Reservation::STATUS_ACTIVE]);
+        $reservation->update(['status' => Reservation::STATUS_CANCELED]);
 
         return ReservationResource::make($reservation->load('office'));
     }

@@ -578,4 +578,108 @@ class ReservationsTest extends TestCase
         Notification::assertSentTo($reservation->office->user, NewHostReservationStart::class);
 
     }
+
+    /**
+     * @return void
+     * @test
+     */
+    function ItCancelReservation(){
+        $user = User::factory()->create();
+        $office = Office::factory()->create();
+        $reservation = Reservation::factory()->for($office)->for($user)->create();
+        $token = $user->createToken('token', ['reservation.cancel']);
+
+        $response = $this->deleteJson(
+            '/api/reservations/'.$reservation->id,
+            [],
+            [
+                'Authorization' => 'Bearer ' . $token->plainTextToken,
+            ]
+        );
+
+        $response->assertOk()
+            ->assertStatus(200)
+            ->assertJsonPath('data.office_id', $office->id)
+            ->assertJsonPath('data.user_id', $user->id)
+            ->assertJsonPath('data.status', Reservation::STATUS_CANCELED);
+    }
+
+    /**
+     * @return void
+     * @test
+     */
+    function ItDoseNotCancelReservationForAnotherUser(){
+        $user = User::factory()->create();
+        $office = Office::factory()->create();
+        $reservation = Reservation::factory()->for($office)->create();
+        $token = $user->createToken('token', ['reservation.cancel']);
+
+        $response = $this->deleteJson(
+            '/api/reservations/'.$reservation->id,
+            [],
+            [
+                'Authorization' => 'Bearer ' . $token->plainTextToken,
+            ]
+        );
+
+        $response->assertJsonValidationErrors(['reservation' => 'Can\'t cancel this reservation']);
+        $this->assertModelExists($reservation);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+        ]);
+    }
+
+    /**
+     * @return void
+     * @test
+     */
+    function ItDoseNotCancelReservationWithCanceledStatus(){
+        $user = User::factory()->create();
+        $office = Office::factory()->create();
+        $reservation = Reservation::factory()->for($office)->for($user)->canceled()->create();
+        $token = $user->createToken('token', ['reservation.cancel']);
+
+        $response = $this->deleteJson(
+            '/api/reservations/'.$reservation->id,
+            [],
+            [
+                'Authorization' => 'Bearer ' . $token->plainTextToken,
+            ]
+        );
+
+        $response->assertJsonValidationErrors(['reservation' => 'Can\'t cancel this reservation']);
+        $this->assertModelExists($reservation);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+        ]);
+    }
+
+    /**
+     * @return void
+     * @test
+     */
+    function ItDoseNotCancelReservationPassingTheStartingDate(){
+        $user = User::factory()->create();
+        $office = Office::factory()->create();
+        $reservation = Reservation::factory()->for($office)->for($user)->create([
+            'start_date' => now()->addDays(-2),
+        ]);
+        $token = $user->createToken('token', ['reservation.cancel']);
+
+        $response = $this->deleteJson(
+            '/api/reservations/'.$reservation->id,
+            [],
+            [
+                'Authorization' => 'Bearer ' . $token->plainTextToken,
+            ]
+        );
+
+        $response->assertJsonValidationErrors(['reservation' => 'Can\'t cancel this reservation']);
+        $this->assertModelExists($reservation);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+        ]);
+    }
+
+
 }
