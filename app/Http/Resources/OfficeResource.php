@@ -21,6 +21,7 @@ class OfficeResource extends JsonResource
             'user' => UserResource::make($this->user),
             'tags' => TagResource::collection($this->tags),
             'images' => ImageResource::collection($this->images),
+            'reservations' => ReservationResource::collection($this->reservations),
 
             $this->merge(Arr::except(parent::toArray($request), [
                 'user_id', 'created_at', 'updated_at', 'deleted_at'

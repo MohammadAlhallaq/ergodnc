@@ -6,6 +6,7 @@ use App\Http\Pipelines\Filtering\FilterByLocation;
 use App\Http\Pipelines\Filtering\FilterByTags;
 use App\Http\Pipelines\Filtering\FilterByUserId;
 use App\Http\Pipelines\Filtering\FilterByVisitorId;
+use App\Http\Pipelines\Filtering\OrderByFirstReservation;
 use App\Http\Pipelines\Filtering\ReturnWithEagerLoadedData;
 use App\Http\Pipelines\Filtering\ShowOfficesForAuthUser;
 use App\Http\Resources\OfficeResource;
@@ -30,13 +31,15 @@ class OfficeController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
+
         $pipes = [
             ShowOfficesForAuthUser::class,
             FilterByUserId::class,
             FilterByVisitorId::class,
             FilterByLocation::class,
             FilterByTags::class,
-            ReturnWithEagerLoadedData::class
+            ReturnWithEagerLoadedData::class,
+            OrderByFirstReservation::class
         ];
 
         $offices = app(Pipeline::class)
@@ -44,6 +47,8 @@ class OfficeController extends Controller
                 ->through($pipes)
                 ->thenReturn()
                 ->paginate(20);
+
+        return OfficeResource::collection($offices);
 
 
 //        $offices = Office::query()
@@ -71,8 +76,6 @@ class OfficeController extends Controller
 //            ->withCount(['reservations' => fn(Builder $builder) => $builder->where('status', Reservation::STATUS_ACTIVE)])
 //            ->latest('id')
 //            ->paginate(20);
-
-        return OfficeResource::collection($offices);
     }
 
 

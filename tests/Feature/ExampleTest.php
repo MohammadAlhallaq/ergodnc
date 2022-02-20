@@ -7,10 +7,12 @@ use App\Models\Reservation;
 use App\Models\Tag;
 use App\Models\User;
 use App\Notifications\OfficeUpdated;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use JetBrains\PhpStorm\Pure;
 use Tests\TestCase;
 
 use function GuzzleHttp\Promise\all;
@@ -296,6 +298,7 @@ class ExampleTest extends TestCase
             'tags' => [$tag->id, $tag1->id],
             'user_id' => $user->id
         ]);
+
 
         $response->assertStatus(201)->assertJsonStructure([
             'data' => [
@@ -711,5 +714,47 @@ class ExampleTest extends TestCase
             ]));
 
         $response->assertOk()->assertJsonCount(2, 'data');
+    }
+
+
+
+    /**
+     * A basic test example.
+     *
+     * @return void
+     * @test
+     */
+    public function itShowsAllOfficesOrderedByFirstReservation()
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('token');
+
+        $office1 = Office::factory()->create();
+        $office2 = Office::factory()->create();
+        $office3 = Office::factory()->create();
+
+        Reservation::factory()->for($office1)->create(['created_at' => now()->addDays(-11)->toDateString()]);
+        Reservation::factory()->for($office1)->create(['created_at' => now()->addDays(-10)->toDateString()]);
+        Reservation::factory()->for($office1)->create(['created_at' => now()->addDays(-9)->toDateString()]);
+        Reservation::factory()->for($office1)->create(['created_at' => now()->addDays(-8)->toDateString()]);
+        Reservation::factory()->for($office2)->create(['created_at' => now()->addDays(-7)->toDateString()]);
+        Reservation::factory()->for($office2)->create(['created_at' => now()->addDays(-6)->toDateString()]);
+        Reservation::factory()->for($office2)->create(['created_at' => now()->addDays(-5)->toDateString()]);
+        Reservation::factory()->for($office2)->create(['created_at' => now()->addDays(-4)->toDateString()]);
+        Reservation::factory()->for($office3)->create(['created_at' => now()->addDays(-3)->toDateString()]);
+        Reservation::factory()->for($office3)->create(['created_at' => now()->addDays(-2)->toDateString()]);
+        Reservation::factory()->for($office3)->create(['created_at' => now()->addDays(-1)->toDateString()]);
+        Reservation::factory()->for($office3)->create(['created_at' => now()->addDays(-8)->toDateString()]);
+
+        $response = $this->getJson(
+            '/api/offices?byReservation=true',
+            [
+                'Authorization' => 'Bearer ' . $token->plainTextToken,
+            ]
+        );
+
+        $this->assertEquals($office1->id, $response->json('data')[0]['id']);
+        $this->assertEquals($office3->id, $response->json('data')[1]['id']);
+        $this->assertEquals($office2->id, $response->json('data')[2]['id']);
     }
 }
