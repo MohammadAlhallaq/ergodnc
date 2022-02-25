@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use MohammadAlhallaq\ChangeAndNotify\Contracts\NotifyWhenDirtyContract;
+use MohammadAlhallaq\ChangeAndNotify\Traits\NotifyWhenDirtyTrait;
 
-class User extends Authenticatable
+class User extends Authenticatable implements NotifyWhenDirtyContract
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, NotifyWhenDirtyTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -46,5 +48,10 @@ class User extends Authenticatable
     public function offices(): HasMany
     {
         return $this->hasMany(Office::class);
+    }
+
+    function passwordColumnName(): string
+    {
+        return 'password';
     }
 }

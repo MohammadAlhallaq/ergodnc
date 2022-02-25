@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\test;
 use App\Models\Office;
 use App\Models\Reservation;
 use App\Models\Tag;
@@ -10,6 +11,8 @@ use App\Notifications\OfficeUpdated;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use JetBrains\PhpStorm\Pure;
