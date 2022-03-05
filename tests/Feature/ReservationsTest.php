@@ -400,7 +400,7 @@ class ReservationsTest extends TestCase
      * @return void
      * @test
      */
-    public function itCanTCreateReservationOnConlectedDays()
+    public function itCanTCreateReservationOnConflictedDays()
     {
         $user = User::factory()->create();
         $office = Office::factory()->create([
@@ -418,8 +418,8 @@ class ReservationsTest extends TestCase
             '/api/reservations',
             [
                 'office_id' => $office->id,
-                'start_date' => now()->addDay(),
-                'end_date' => now()->addDays(3),
+                'start_date' => now()->addDays(3),
+                'end_date' => now()->addDays(5),
             ],
             [
                 'Authorization' => 'Bearer ' . $token->plainTextToken,

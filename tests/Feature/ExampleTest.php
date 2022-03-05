@@ -11,14 +11,9 @@ use App\Notifications\OfficeUpdated;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use JetBrains\PhpStorm\Pure;
 use Tests\TestCase;
-
-use function GuzzleHttp\Promise\all;
 
 class ExampleTest extends TestCase
 {
